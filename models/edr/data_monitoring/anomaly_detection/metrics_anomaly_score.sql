@@ -1,6 +1,7 @@
 {{
   config(
     materialized = 'view',
+    sql_header = 'set odps.sql.groupby.position.alias=true;',
     bind=False
   )
 }}

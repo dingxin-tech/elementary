@@ -33,3 +33,8 @@
 {% macro trino__edr_timeadd(date_part, number, timestamp_expression) %}
     date_add('{{ date_part }}', {{ elementary.edr_cast_as_int(number) }}, {{ elementary.edr_cast_as_timestamp(timestamp_expression) }})
 {% endmacro %}
+
+{% macro maxcompute__edr_timeadd(date_part, number, timestamp_expression) %}
+    dateadd({{ elementary.edr_cast_as_timestamp(timestamp_expression) }}, {{ elementary.edr_cast_as_int(number) }}, '{{ date_part }}')
+{% endmacro %}
+
