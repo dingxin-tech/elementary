@@ -247,7 +247,8 @@ def main() -> int:
                 problems.append(
                     f"R3 tag '{entry['revision']}' now resolves to {sha[:9]}, "
                     f"package-lock.yml says {match[0]['revision'][:9]} "
-                    f"-> the tag moved; pin the commit sha instead"
+                    f"-> the tag moved, so pin the sha the lock "
+                    f"was built from"
                 )
 
     print(
