@@ -1,6 +1,5 @@
 ## Community-maintained fork of the original [elementary](https://github.com/elementary-data/elementary) package with extended support for [dbt-maxcompute](https://github.com/aliyun/dbt-maxcompute) (dbt adapter of Alibaba Cloud MaxCompute).
 
-
 <p align="center">
 <img alt="Logo" src="https://raw.githubusercontent.com/elementary-data/elementary/master/static/github_banner.png"/ width="1000">
 </p>
@@ -133,3 +132,60 @@ The cloud service or the CLI tool read the data from these tables, send alerts a
 Thank you :orange_heart: Whether it’s a bug fix, new feature, or additional documentation - we greatly appreciate contributions!
 
 Check out the [contributions guide](https://docs.elementary-data.com/general/contributions) and [open issues](https://github.com/elementary-data/elementary/issues) in the main repo.
+
+## Dependency pinning
+
+`packages.yml` pins **dbt-utils** to tag `1.3.0-mc.1`:
+
+```yaml
+- git: "https://github.com/dingxin-tech/dbt-utils.git"
+  revision: 1.3.0-mc.1
+```
+
+`package-lock.yml` in this directory records what that resolved to:
+
+    dbt-utils -> 3463ce1e4bf86fe6e11ae7bf05ef04ffc04a3a1a
+
+Before this change the dependency floated on a branch (`revision: main`), so two clean `dbt deps` runs on different
+days could install different dbt-utils source, and nothing in the project said which one you got.
+dbt-utils `1.3.0-mc.1` is the revision the MaxCompute compatibility run of 2026-09-25 built green (9/9 representative models).
+
+Check it yourself, in a clean checkout:
+
+```bash
+python dev-tools/check_package_pins.py      # R1-R4: immutable refs, lock in sync, tags unmoved
+rm -rf dbt_packages package-lock.yml && dbt deps && git diff --exit-code package-lock.yml
+```
+
+### Installing this package reproducibly
+
+```yaml
+# your_project/packages.yml
+packages:
+  - git: "https://github.com/dingxin-tech/elementary.git"
+    revision: 0.16.4-mc.1
+```
+
+Pin tag in your own project, then commit the `package-lock.yml` that `dbt deps` writes there: it holds the full commit sha, so a rebuild years from now installs this same code.
+
+```bash
+rm -rf dbt_packages package-lock.yml && dbt deps   # first install: resolves, installs, writes the lock
+dbt deps                                           # later runs: install exactly what the committed lock records
+dbt deps --lock                                    # regenerate the lock file only - it installs nothing
+```
+
+`--lock` is not an install command. On dbt-core 1.11 `dbt deps --help` describes it as
+"Generate the package-lock.yml file without install the packages." - it writes
+`package-lock.yml` and stops there. Reproducing an install is plain `dbt deps`: with a
+committed lock and an unchanged `packages.yml`, that is what reads the lock as its source
+of truth, and it is what a rebuild months later runs.
+
+### Upgrading a dependency
+
+1. Read the current MaxCompute support level first: the _Compatible dbt Packages_ table in the
+   [dbt-maxcompute README](https://github.com/aliyun/dbt-maxcompute).
+2. Change `revision:` (or `version:`) to a tag or a full 40-char commit sha. Never a branch name -
+   `.github/workflows/deps-lock-check.yml` fails on that.
+3. Regenerate from scratch: `rm -rf dbt_packages package-lock.yml && dbt deps`, then
+   `python dev-tools/check_package_pins.py` and a real `dbt build` against a three-tier MaxCompute project.
+4. Commit `packages.yml` and `package-lock.yml` together so a revert is atomic.

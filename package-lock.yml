@@ -1,0 +1,5 @@
+packages:
+  - git: https://github.com/dingxin-tech/dbt-utils.git
+    name: dbt_utils
+    revision: 3463ce1e4bf86fe6e11ae7bf05ef04ffc04a3a1a
+sha1_hash: 38b8f3ffe708976acd5427015c3b066aba81441d
